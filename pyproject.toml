@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcp_doctor"
+version = "0.1.0"
+description = "MCP server contract linter"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {file = "LICENSE"}
+authors = [{name = "Jonah Helland"}]
+dependencies = []
+
+[project.scripts]
+mcp-doctor = "mcp_doctor.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
