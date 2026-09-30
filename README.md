@@ -56,7 +56,21 @@ Use `--json` on either command for automation:
 $ mcp-doctor config demo/mcp.json --json
 {
   "checks": [
-    {"message": "valid JSON", "name": "json", "status": "pass"}
+    {
+      "message": "valid JSON",
+      "name": "json",
+      "status": "pass"
+    },
+    {
+      "message": "found 1 server configuration(s)",
+      "name": "servers",
+      "status": "pass"
+    },
+    {
+      "message": "command configured: python",
+      "name": "server:demo",
+      "status": "pass"
+    }
   ],
   "ok": true,
   "target": "demo/mcp.json"
