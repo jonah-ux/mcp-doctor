@@ -4,6 +4,10 @@
 
 **Check tools, resources, prompts, schemas, and safety metadata before an agent sees them.**
 
+[![CI](https://github.com/jonah-ux/mcp-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/jonah-ux/mcp-doctor/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.11%2B-3776ab)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-22c55e)](LICENSE)
+
 MCP Doctor is a small, offline-friendly CLI for catching missing names, descriptions,
 input schemas, and timeouts in an MCP server manifest. It emits stable diagnostic codes
 for humans and machine callers, so a CI job or coding agent can act on the same result.
