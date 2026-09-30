@@ -7,7 +7,7 @@
 ## Install
 
 ```bash
-pip install git+https://github.com/jonah-ux/mcp-doctor.git@v0.1.0
+pip install git+https://github.com/jonah-ux/mcp-doctor.git@main
 ```
 
 ## Quick start
