@@ -1,0 +1,12 @@
+{
+  "tools": [
+    {
+      "name": "search",
+      "description": "Find documents by query.",
+      "inputSchema": {"type": "object", "properties": {"query": {"type": "string"}}},
+      "timeout": 10
+    }
+  ],
+  "resources": [{"name": "docs://readme"}],
+  "prompts": [{"name": "summarize"}]
+}

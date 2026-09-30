@@ -1,6 +1,13 @@
-import json,tempfile,pathlib
+import json
+import pathlib
+import tempfile
+
 from mcp_doctor.cli import main
-with tempfile.TemporaryDirectory() as d:
- p=pathlib.Path(d)/'server.json'; p.write_text(json.dumps({'tools':[{'name':'search','description':'Find things','inputSchema':{},'timeout':5}], 'resources':[], 'prompts':[]}))
- print('MCP Doctor demo: a clean contract is boring on purpose')
- main(['check',str(p)])
+
+ROOT = pathlib.Path(__file__).parents[1]
+
+print("MCP Doctor demo: a clean contract is boring on purpose")
+main(["check", str(ROOT / "examples" / "valid-server.json")])
+print()
+print("MCP Doctor demo: the broken fixture is useful because it fails loudly")
+main(["check", str(ROOT / "examples" / "invalid-server.json")])

@@ -1,0 +1,7 @@
+{
+  "tools": [
+    {"name": "search", "description": "", "inputSchema": {}}
+  ],
+  "resources": [{"name": "docs://readme"}],
+  "prompts": []
+}
