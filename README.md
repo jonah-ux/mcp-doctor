@@ -47,6 +47,22 @@ otherwise it is reported as a warning. Exit codes are `0` for a clean or warning
 cat server.json | mcp-doctor check - --strict --json
 ```
 
+## See it work
+
+The demo shows both sides of the contract: a clean manifest passes, while a missing description and timeout fail with stable diagnostic codes.
+
+```text
+MCP Doctor 0.2.0
+ok contract passed (1 tools, 1 resources, 1 prompts)
+
+x MCP002 search: tool needs a non-empty description
+! MCP004 search: declare a positive timeout
+```
+
+## Related tools
+
+Use [Agent Policy](https://github.com/jonah-ux/agent-policy) for capability decisions, [Agent Eval Kit](https://github.com/jonah-ux/agent-eval-kit) for repeatable command fixtures, and [Agent Proof](https://github.com/jonah-ux/agent-proof) to retain the diagnostic result.
+
 ## Development
 
 ```bash
