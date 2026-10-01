@@ -20,7 +20,7 @@ mcp-doctor check examples/valid-server.json
 ```
 
 ```text
-MCP Doctor 0.2.0
+MCP Doctor 0.2.4
 ok contract passed (1 tools, 1 resources, 1 prompts)
 ```
 
@@ -52,7 +52,7 @@ cat server.json | mcp-doctor check - --strict --json
 The demo shows both sides of the contract: a clean manifest passes, while a missing description and timeout fail with stable diagnostic codes.
 
 ```text
-MCP Doctor 0.2.0
+MCP Doctor 0.2.4
 ok contract passed (1 tools, 1 resources, 1 prompts)
 
 x MCP002 search: tool needs a non-empty description
