@@ -38,7 +38,7 @@ jobs:
           python -m pip install --upgrade installer
           python -m venv .release-consumer
           .release-consumer/bin/python -m pip install dist/*.whl
-          .release-consumer/bin/python scripts/verify_installed.py
+          (cd /tmp && "$GITHUB_WORKSPACE/.release-consumer/bin/python" "$GITHUB_WORKSPACE/scripts/verify_installed.py")
       - name: Publish prerelease assets
         env:
           GH_TOKEN: ${{ github.token }}
