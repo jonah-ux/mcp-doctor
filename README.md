@@ -20,7 +20,7 @@ mcp-doctor check examples/valid-server.json
 ```
 
 ```text
-MCP Doctor 0.2.4
+MCP Doctor 0.3.0
 ok contract passed (1 tools, 1 resources, 1 prompts)
 ```
 
@@ -29,12 +29,13 @@ Try the failing fixture to see actionable diagnostics:
 ```bash
 mcp-doctor check examples/invalid-server.json
 mcp-doctor check examples/valid-server.json --json
+mcp-doctor check examples/valid-server.json --baseline examples/valid-server.json --json
 ```
 
 The JSON schema is intentionally tiny and stable:
 
 ```json
-{"schema":"mcp-doctor/v1","ok":true,"findings":[],"counts":{"tools":1,"resources":1,"prompts":1}}
+{"schema":"mcp-doctor/v1","ok":true,"findings":[],"counts":{"tools":1,"resources":1,"prompts":1},"fingerprint":"...","baseline":null}
 ```
 
 ## Agent-friendly usage
@@ -47,12 +48,17 @@ otherwise it is reported as a warning. Exit codes are `0` for a clean or warning
 cat server.json | mcp-doctor check - --strict --json
 ```
 
+Use `--baseline=PATH` to compare a manifest with a saved contract fingerprint.
+The report exposes only stable entry names and SHA-256 digests, plus added,
+removed, and changed entries. Drift is a warning by default; add
+`--fail-on-drift` to make it fail CI with exit code `1`.
+
 ## See it work
 
 The demo shows both sides of the contract: a clean manifest passes, while a missing description and timeout fail with stable diagnostic codes.
 
 ```text
-MCP Doctor 0.2.4
+MCP Doctor 0.3.0
 ok contract passed (1 tools, 1 resources, 1 prompts)
 
 x MCP002 search: tool needs a non-empty description
