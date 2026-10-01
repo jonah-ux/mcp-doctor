@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from pathlib import Path
 from typing import Any
 
-VERSION = "0.2.4"
+VERSION = "0.3.0"
 GROUPS = ("tools", "resources", "prompts")
 
 
@@ -24,6 +25,56 @@ def _load_document(path: str | None) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ValueError("the manifest root must be a JSON object")
     return value
+
+
+def _canonical_json(value: Any) -> str:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def _sha256(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _contract_records(data: dict[str, Any]) -> dict[str, str]:
+    """Return stable entry names and digests without printing manifest contents."""
+    buckets: dict[str, list[str]] = {}
+    for group in GROUPS:
+        items = data.get(group, [])
+        if not isinstance(items, list):
+            continue
+        for item in items:
+            if isinstance(item, dict):
+                name = item.get("name")
+                label = name.strip() if isinstance(name, str) and name.strip() else "<unnamed>"
+            else:
+                label = "<invalid>"
+            key = f"{group}:{label}"
+            buckets.setdefault(key, []).append(_sha256(_canonical_json(item)))
+
+    records: dict[str, str] = {}
+    for base, digests in sorted(buckets.items()):
+        ordered = sorted(digests)
+        for index, digest in enumerate(ordered, start=1):
+            key = base if len(ordered) == 1 else f"{base}[{index}]"
+            records[key] = digest
+    return records
+
+
+def _fingerprint(data: dict[str, Any]) -> str:
+    return _sha256(_canonical_json(_contract_records(data)))
+
+
+def _baseline_diff(current: dict[str, str], baseline: dict[str, str]) -> dict[str, Any]:
+    current_keys = set(current)
+    baseline_keys = set(baseline)
+    changed = [
+        {"key": key, "baseline_sha256": baseline[key], "current_sha256": current[key]}
+        for key in sorted(current_keys & baseline_keys)
+        if current[key] != baseline[key]
+    ]
+    added = [{"key": key, "sha256": current[key]} for key in sorted(current_keys - baseline_keys)]
+    removed = [{"key": key, "sha256": baseline[key]} for key in sorted(baseline_keys - current_keys)]
+    return {"added": added, "removed": removed, "changed": changed}
 
 
 def _validate(data: dict[str, Any]) -> tuple[list[dict[str, str]], dict[str, int]]:
@@ -70,6 +121,18 @@ def _render_text(result: dict[str, Any]) -> str:
     lines.append(
         f"{'ok contract passed' if result['ok'] else 'failed contract has errors'} ({inventory})"
     )
+    lines.append(f"fingerprint {result['fingerprint']}")
+    baseline = result.get("baseline")
+    if baseline:
+        if baseline["match"]:
+            lines.append(f"baseline matched ({baseline['fingerprint']})")
+        else:
+            lines.append(
+                "baseline drift: "
+                f"{len(baseline['added'])} added, "
+                f"{len(baseline['removed'])} removed, "
+                f"{len(baseline['changed'])} changed"
+            )
     if result["strict"] and any(f["severity"] == "error" for f in result["findings"]):
         lines.append("strict mode: warnings are treated as errors")
     return "\n".join(lines)
@@ -84,10 +147,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("path", nargs="?", help="JSON manifest path; use '-' for stdin")
     parser.add_argument("--json", action="store_true", help="emit agent-friendly JSON")
     parser.add_argument("--strict", action="store_true", help="treat warnings as errors")
+    parser.add_argument("--baseline", help="compare the current contract with another manifest")
+    parser.add_argument(
+        "--fail-on-drift",
+        action="store_true",
+        help="return exit 1 when --baseline differs",
+    )
     parser.add_argument("--version", action="version", version=f"mcp-doctor {VERSION}")
     args = parser.parse_args(argv)
 
     input_error = False
+    baseline_error = False
+    data: dict[str, Any] = {group: [] for group in GROUPS}
     try:
         data = _load_document(args.path)
         findings, counts = _validate(data)
@@ -95,6 +166,34 @@ def main(argv: list[str] | None = None) -> int:
         input_error = True
         findings = [_finding("MCP000", args.path or "<input>", str(exc))]
         counts = {group: 0 for group in GROUPS}
+
+    baseline_result: dict[str, Any] | None = None
+    if args.baseline:
+        try:
+            if args.baseline == "-":
+                raise ValueError("baseline must be a file path, not stdin")
+            baseline_data = _load_document(args.baseline)
+            baseline_records = _contract_records(baseline_data)
+            current_records = _contract_records(data)
+            diff = _baseline_diff(current_records, baseline_records)
+            baseline_result = {
+                "path": args.baseline,
+                "fingerprint": _fingerprint(baseline_data),
+                "match": not any(diff.values()),
+                **diff,
+            }
+            if not baseline_result["match"]:
+                findings.append(
+                    _finding(
+                        "MCP010",
+                        "<baseline>",
+                        "manifest differs from baseline",
+                        severity="error" if args.fail_on_drift else "warning",
+                    )
+                )
+        except (OSError, json.JSONDecodeError, ValueError) as exc:
+            baseline_error = True
+            findings.append(_finding("MCP008", args.baseline, str(exc)))
 
     if args.strict:
         findings = [
@@ -108,9 +207,11 @@ def main(argv: list[str] | None = None) -> int:
         "ok": not any(finding["severity"] == "error" for finding in findings),
         "findings": findings,
         "counts": counts,
+        "fingerprint": _fingerprint(data),
+        "baseline": baseline_result,
     }
     print(json.dumps(result, indent=2, sort_keys=True) if args.json else _render_text(result))
-    if input_error:
+    if input_error or baseline_error:
         return 2
     return 0 if result["ok"] else 1
 
