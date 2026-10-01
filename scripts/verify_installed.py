@@ -19,7 +19,7 @@ def main() -> int:
             [sys.executable, "-I", "-c", "import mcp_doctor; print(mcp_doctor.__file__)"],
             cwd=cwd, text=True,
         ).strip()
-        if Path(origin).resolve().is_relative_to(root):
+        if Path(origin).resolve().is_relative_to(root / "src"):
             raise RuntimeError("consumer resolved the source checkout")
 
         def run(*args: str, expected: int = 0) -> str:

@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-VERSION = "0.2.0"
+VERSION = "0.2.4"
 GROUPS = ("tools", "resources", "prompts")
 
 
