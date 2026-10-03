@@ -34,17 +34,63 @@ class CliTests(unittest.TestCase):
         self.assertEqual(result["counts"]["tools"], 1)
         self.assertEqual(result["findings"], [])
 
-    def test_missing_timeout_is_warning_unless_strict(self):
+    def test_spec_tool_without_timeout_passes_strict(self):
+        # `timeout` is not part of the MCP Tool object, so a spec-shaped tool must pass.
+        path = self.write_manifest(
+            {"tools": [{"name": "search", "description": "Find things", "inputSchema": {"type": "object"}}]}
+        )
+        code, output = self.run_cli("check", path, "--strict", "--json")
+        self.assertEqual(code, 0)
+        self.assertEqual(json.loads(output)["findings"], [])
+
+    def test_missing_timeout_is_opt_in_warning_unless_strict(self):
         path = self.write_manifest(
             {"tools": [{"name": "search", "description": "Find things", "inputSchema": {}}]}
         )
-        code, output = self.run_cli("check", path, "--json")
+        code, output = self.run_cli("check", path, "--require-timeout", "--json")
         self.assertEqual(code, 0)
         self.assertEqual(json.loads(output)["findings"][0]["code"], "MCP004")
 
-        strict_code, strict_output = self.run_cli("check", path, "--strict", "--json")
+        strict_code, strict_output = self.run_cli(
+            "check", path, "--require-timeout", "--strict", "--json"
+        )
         self.assertEqual(strict_code, 1)
         self.assertFalse(json.loads(strict_output)["ok"])
+
+    def test_present_timeout_is_still_validated_without_opt_in(self):
+        path = self.write_manifest(
+            {"tools": [{"name": "search", "description": "Find", "inputSchema": {}, "timeout": 0}]}
+        )
+        code, output = self.run_cli("check", path, "--json")
+        self.assertEqual(code, 1)
+        self.assertEqual(json.loads(output)["findings"][0]["code"], "MCP007")
+
+    def test_resource_without_uri_is_an_error(self):
+        path = self.write_manifest({"resources": [{"name": "readme"}]})
+        code, output = self.run_cli("check", path, "--json")
+        self.assertEqual(code, 1)
+        finding = json.loads(output)["findings"][0]
+        self.assertEqual((finding["code"], finding["severity"]), ("MCP011", "error"))
+
+        ok_path = self.write_manifest({"resources": [{"uri": "docs://readme", "name": "readme"}]})
+        ok_code, _ = self.run_cli("check", ok_path, "--json")
+        self.assertEqual(ok_code, 0)
+
+    def test_required_names_must_be_defined_properties(self):
+        schema = {"type": "object", "properties": {"query": {"type": "string"}}, "required": ["query", "limit"]}
+        path = self.write_manifest({"tools": [{"name": "search", "description": "Find", "inputSchema": schema}]})
+        code, output = self.run_cli("check", path, "--json")
+        self.assertEqual(code, 0)
+        finding = json.loads(output)["findings"][0]
+        self.assertEqual((finding["code"], finding["severity"]), ("MCP012", "warning"))
+        self.assertIn("limit", finding["message"])
+        self.assertNotIn("query", finding["message"])
+
+        bad = {"type": "object", "required": "query"}
+        bad_path = self.write_manifest({"tools": [{"name": "search", "description": "Find", "inputSchema": bad}]})
+        bad_code, bad_output = self.run_cli("check", bad_path, "--json")
+        self.assertEqual(bad_code, 1)
+        self.assertEqual(json.loads(bad_output)["findings"][0]["severity"], "error")
 
     def test_invalid_tool_has_stable_codes_and_text_output(self):
         path = self.write_manifest({"tools": [{"name": "", "description": "", "inputSchema": {}}]})

@@ -84,7 +84,31 @@ def _baseline_diff(current: dict[str, str], baseline: dict[str, str]) -> dict[st
     return {"added": added, "removed": removed, "changed": changed}
 
 
-def _validate(data: dict[str, Any]) -> tuple[list[dict[str, str]], dict[str, int]]:
+def _required_findings(label: str, schema: dict[str, Any]) -> list[dict[str, str]]:
+    """Flag `required` names that the schema never defines in `properties`."""
+    required = schema.get("required")
+    if required is None:
+        return []
+    if not isinstance(required, list) or not all(isinstance(name, str) for name in required):
+        return [_finding("MCP012", label, "inputSchema.required must be an array of names")]
+    properties = schema.get("properties")
+    defined = set(properties) if isinstance(properties, dict) else set()
+    missing = sorted(set(required) - defined)
+    if not missing:
+        return []
+    return [
+        _finding(
+            "MCP012",
+            label,
+            "inputSchema.required names undefined properties: " + ", ".join(missing),
+            severity="warning",
+        )
+    ]
+
+
+def _validate(
+    data: dict[str, Any], *, require_timeout: bool = False
+) -> tuple[list[dict[str, str]], dict[str, int]]:
     findings: list[dict[str, str]] = []
     counts = {group: 0 for group in GROUPS}
     for group in GROUPS:
@@ -101,18 +125,28 @@ def _validate(data: dict[str, Any]) -> tuple[list[dict[str, str]], dict[str, int
             name = item.get("name")
             if not isinstance(name, str) or not name.strip():
                 findings.append(_finding("MCP001", item_path, "missing name"))
+            if group == "resources":
+                uri = item.get("uri")
+                if not isinstance(uri, str) or not uri.strip():
+                    findings.append(_finding("MCP011", item_path, "resource needs a non-empty uri"))
             if group != "tools":
                 continue
             label = name.strip() if isinstance(name, str) and name.strip() else item_path
             if not isinstance(item.get("description"), str) or not item["description"].strip():
                 findings.append(_finding("MCP002", label, "tool needs a non-empty description"))
-            if not isinstance(item.get("inputSchema"), dict):
+            schema = item.get("inputSchema")
+            if not isinstance(schema, dict):
                 findings.append(_finding("MCP003", label, "tool needs an object inputSchema"))
+            else:
+                findings.extend(_required_findings(label, schema))
+            # `timeout` is not part of the MCP Tool object; clients own timeouts.
+            # It is checked only as an opt-in manifest extension.
             timeout = item.get("timeout")
             if timeout is None:
-                findings.append(
-                    _finding("MCP004", label, "declare a positive timeout", severity="warning")
-                )
+                if require_timeout:
+                    findings.append(
+                        _finding("MCP004", label, "declare a positive timeout", severity="warning")
+                    )
             elif isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or timeout <= 0:
                 findings.append(_finding("MCP007", label, "timeout must be a positive number"))
             elif isinstance(timeout, float) and not math.isfinite(timeout):
@@ -156,6 +190,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("path", nargs="?", help="JSON manifest path; use '-' for stdin")
     parser.add_argument("--json", action="store_true", help="emit agent-friendly JSON")
     parser.add_argument("--strict", action="store_true", help="treat warnings as errors")
+    parser.add_argument(
+        "--require-timeout",
+        action="store_true",
+        help="warn when a tool omits the non-standard `timeout` manifest extension",
+    )
     parser.add_argument("--baseline", help="compare the current contract with another manifest")
     parser.add_argument(
         "--fail-on-drift",
@@ -170,7 +209,7 @@ def main(argv: list[str] | None = None) -> int:
     data: dict[str, Any] = {group: [] for group in GROUPS}
     try:
         data = _load_document(args.path)
-        findings, counts = _validate(data)
+        findings, counts = _validate(data, require_timeout=args.require_timeout)
     except (OSError, json.JSONDecodeError, ValueError) as exc:
         input_error = True
         findings = [_finding("MCP000", args.path or "<input>", str(exc))]

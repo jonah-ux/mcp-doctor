@@ -9,7 +9,8 @@
 [![License](https://img.shields.io/badge/license-MIT-22c55e)](LICENSE)
 
 MCP Doctor is a small, offline-friendly CLI for catching missing names, descriptions,
-input schemas, and timeouts in an MCP server manifest. It emits stable diagnostic codes
+input schemas, resource URIs, and undefined required fields in an MCP server manifest
+(for example, a saved `tools/list` result). It emits stable diagnostic codes
 for humans and machine callers, so a CI job or coding agent can act on the same result.
 
 ## Try it in 30 seconds
@@ -44,12 +45,13 @@ The JSON schema is intentionally tiny and stable:
 
 ## Agent-friendly usage
 
-Pass `-` to read a manifest from stdin. Use `--strict` when a missing timeout should fail CI;
-otherwise it is reported as a warning. Exit codes are `0` for a clean or warning-only report,
+Pass `-` to read a manifest from stdin. Use `--strict` to turn warnings into CI failures.
+`timeout` is not part of the MCP Tool object (clients own timeouts), so a missing timeout is
+only reported when you opt in with `--require-timeout` for your own manifest extension. Exit codes are `0` for a clean or warning-only report,
 `1` for contract findings, and `2` for unreadable or malformed input.
 
 JSON is parsed strictly: `NaN` and `Infinity` are rejected instead of being
-treated as numbers. A timeout must also be finite and greater than zero;
+treated as numbers. When a timeout is present it must be finite and greater than zero;
 non-finite timeout values produce the stable `MCP009` finding.
 
 ```bash
@@ -63,20 +65,20 @@ removed, and changed entries. Drift is a warning by default; add
 
 ## See it work
 
-The demo shows both sides of the contract: a clean manifest passes, while a missing description and timeout fail with stable diagnostic codes.
+The demo shows both sides of the contract: a clean manifest passes, while a missing description and a resource without a URI fail with stable diagnostic codes.
 
 ```text
 MCP Doctor 0.3.0
 ok contract passed (1 tools, 1 resources, 1 prompts)
 
 x MCP002 search: tool needs a non-empty description
-! MCP004 search: declare a positive timeout
+x MCP011 resources[0]: resource needs a non-empty uri
 ```
 
 ## Open the contract walkthrough
 
 The [MCP contract walkthrough](docs/walkthrough.html) is a standalone, dependency-free inspection
-desk for a valid manifest, missing descriptions, missing timeouts, and baseline drift. Its buttons
+desk for a valid manifest, missing descriptions, missing resource URIs, and baseline drift. Its buttons
 show a synthetic browser model only; the command panel is the reproducible path against the real
 CLI. No server is contacted and no provider behavior is implied.
 

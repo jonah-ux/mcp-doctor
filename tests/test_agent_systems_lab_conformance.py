@@ -41,10 +41,12 @@ class AgentSystemsLabConformanceTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertTrue(result["ok"])
         missing_timeout = self.write({"tools": [{"name": "search", "description": "Find", "inputSchema": {}}]})
-        warning_code, warning = self.run_cli("check", missing_timeout, "--json")
+        warning_code, warning = self.run_cli("check", missing_timeout, "--require-timeout", "--json")
         self.assertEqual(warning_code, 0)
         self.assertEqual(warning["findings"][0]["code"], "MCP004")
-        strict_code, strict = self.run_cli("check", missing_timeout, "--strict", "--json")
+        strict_code, strict = self.run_cli(
+            "check", missing_timeout, "--require-timeout", "--strict", "--json"
+        )
         self.assertEqual(strict_code, 1)
         self.assertFalse(strict["ok"])
         self.assertEqual(strict["findings"][0]["severity"], "error")
