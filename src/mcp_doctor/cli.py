@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import sys
 from pathlib import Path
 from typing import Any
@@ -17,11 +18,17 @@ def _finding(code: str, path: str, message: str, *, severity: str = "error") -> 
     return {"code": code, "path": path, "message": message, "severity": severity}
 
 
+def _reject_nonfinite_json_constant(_value: str) -> None:
+    """Keep Python's permissive JSON decoder inside the JSON specification."""
+
+    raise ValueError("JSON must not contain NaN or Infinity")
+
+
 def _load_document(path: str | None) -> dict[str, Any]:
     if path is None:
         return {group: [] for group in GROUPS}
     raw = sys.stdin.read() if path == "-" else Path(path).read_text(encoding="utf-8")
-    value = json.loads(raw)
+    value = json.loads(raw, parse_constant=_reject_nonfinite_json_constant)
     if not isinstance(value, dict):
         raise ValueError("the manifest root must be a JSON object")
     return value
@@ -108,6 +115,8 @@ def _validate(data: dict[str, Any]) -> tuple[list[dict[str, str]], dict[str, int
                 )
             elif isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or timeout <= 0:
                 findings.append(_finding("MCP007", label, "timeout must be a positive number"))
+            elif isinstance(timeout, float) and not math.isfinite(timeout):
+                findings.append(_finding("MCP009", label, "timeout must be a finite positive number"))
     return findings, counts
 
 
