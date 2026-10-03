@@ -89,8 +89,8 @@ Use [Agent Policy](https://github.com/jonah-ux/agent-policy) for capability deci
 ## Development
 
 ```bash
-python -m unittest discover -s tests
-python -m build --sdist --wheel
+python3 -m unittest discover -s tests
+python3 -m build --sdist --wheel
 python demos/demo.py
 ```
 
@@ -102,7 +102,7 @@ permissions, isolation, verification, or provider behavior beyond the fields it 
 Run the owner-native supply-chain and privacy audit from a clean checkout:
 
 ```bash
-python scripts/audit_public_surface.py --json
+python3 scripts/audit_public_surface.py --json
 ```
 
 The static receipt checks dependency and license declarations, release-workflow provenance markers,
