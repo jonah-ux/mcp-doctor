@@ -17,6 +17,8 @@ for humans and machine callers, so a CI job or coding agent can act on the same 
 ```bash
 git clone https://github.com/jonah-ux/mcp-doctor.git
 cd mcp-doctor
+python3 -m venv .venv
+. .venv/bin/activate
 python3 -m pip install .
 mcp-doctor check examples/valid-server.json
 ```
