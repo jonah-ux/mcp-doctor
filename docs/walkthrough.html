@@ -21,7 +21,7 @@ python3 -m venv .venv
 python3 -m pip install .
 mcp-doctor check examples/valid-server.json
 mcp-doctor check examples/invalid-server.json
-cat server.json | mcp-doctor check - --strict --json
+cat examples/valid-server.json | mcp-doctor check - --strict --json
 mcp-doctor check examples/valid-server.json --baseline examples/valid-server.json --json</pre></section>
     <footer class="foot"><span>MCP Doctor checks the contract you gave it. It cannot bless a server it never saw.</span><span><a href="https://github.com/jonah-ux/mcp-doctor#readme">Back to README</a> · <a href="https://github.com/jonah-ux/mcp-doctor">GitHub</a></span></footer>
   </main>
