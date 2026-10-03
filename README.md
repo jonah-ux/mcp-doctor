@@ -15,7 +15,9 @@ for humans and machine callers, so a CI job or coding agent can act on the same 
 ## Try it in 30 seconds
 
 ```bash
-python -m pip install git+https://github.com/jonah-ux/mcp-doctor.git@main
+git clone https://github.com/jonah-ux/mcp-doctor.git
+cd mcp-doctor
+python3 -m pip install .
 mcp-doctor check examples/valid-server.json
 ```
 
@@ -64,6 +66,13 @@ ok contract passed (1 tools, 1 resources, 1 prompts)
 x MCP002 search: tool needs a non-empty description
 ! MCP004 search: declare a positive timeout
 ```
+
+## Open the contract walkthrough
+
+The [MCP contract walkthrough](docs/walkthrough.html) is a standalone, dependency-free inspection
+desk for a valid manifest, missing descriptions, missing timeouts, and baseline drift. Its buttons
+show a synthetic browser model only; the command panel is the reproducible path against the real
+CLI. No server is contacted and no provider behavior is implied.
 
 ## Related tools
 
