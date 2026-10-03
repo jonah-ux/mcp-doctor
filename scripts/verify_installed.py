@@ -42,10 +42,10 @@ def main() -> int:
             raise RuntimeError("valid contract did not pass")
         broken = json.loads(run(
             "check", str(root / "examples/invalid-server.json"),
-            "--strict", "--json", expected=1,
+            "--require-timeout", "--strict", "--json", expected=1,
         ))
         codes = {finding["code"] for finding in broken["findings"]}
-        if broken["ok"] or not {"MCP002", "MCP004"} <= codes:
+        if broken["ok"] or not {"MCP002", "MCP004", "MCP011"} <= codes:
             raise RuntimeError("invalid contract lost its stable diagnostics")
         missing = json.loads(run("check", str(cwd / "absent.json"), "--json", expected=2))
         if missing["findings"][0]["code"] != "MCP000":
