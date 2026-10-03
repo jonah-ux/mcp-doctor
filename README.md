@@ -97,4 +97,18 @@ python demos/demo.py
 Read the [release guide](docs/releasing.md) before publishing. The project does not claim
 permissions, isolation, verification, or provider behavior beyond the fields it can prove.
 
+## Public surface audit
+
+Run the owner-native supply-chain and privacy audit from a clean checkout:
+
+```bash
+python scripts/audit_public_surface.py --json
+```
+
+The static receipt checks dependency and license declarations, release-workflow provenance markers,
+and high-signal secret patterns across tracked text files. Pass a built `dist/` directory with
+`--dist-dir dist` to compare wheel and sdist bytes with `SHA256SUMS`. Missing artifacts remain
+`unavailable`; a passing audit does not claim security, deployment, adoption, or production
+readiness.
+
 MIT licensed. Contributions and sanitized bug reports are welcome.
