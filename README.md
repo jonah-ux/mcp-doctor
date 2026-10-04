@@ -51,8 +51,8 @@ only reported when you opt in with `--require-timeout` for your own manifest ext
 `1` for contract findings, and `2` for unreadable or malformed input.
 
 JSON tokens `NaN` and `Infinity` are rejected as malformed input (`MCP000`, exit `2`).
-A parsed timeout must be finite and greater than zero: numeric overflow such as `1e999`,
-zero, and negative values produce `MCP009` (exit `1`).
+A parsed timeout must be finite and greater than zero. Positive numeric overflow such as
+`1e999` produces `MCP009`; zero or negative values produce `MCP007` (exit `1`).
 
 ```bash
 cat server.json | mcp-doctor check - --strict --json
