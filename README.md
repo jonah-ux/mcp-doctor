@@ -50,9 +50,9 @@ Pass `-` to read a manifest from stdin. Use `--strict` to turn warnings into CI 
 only reported when you opt in with `--require-timeout` for your own manifest extension. Exit codes are `0` for a clean or warning-only report,
 `1` for contract findings, and `2` for unreadable or malformed input.
 
-JSON is parsed strictly: `NaN` and `Infinity` are rejected instead of being
-treated as numbers. When a timeout is present it must be finite and greater than zero;
-non-finite timeout values produce the stable `MCP009` finding.
+JSON tokens `NaN` and `Infinity` are rejected as malformed input (`MCP000`, exit `2`).
+A parsed timeout must be finite and greater than zero: numeric overflow such as `1e999`,
+zero, and negative values produce `MCP009` (exit `1`).
 
 ```bash
 cat server.json | mcp-doctor check - --strict --json
