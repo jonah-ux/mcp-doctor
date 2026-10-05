@@ -6,10 +6,19 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+from mcp_doctor import __version__
 from mcp_doctor.cli import main
 
 
 class CliTests(unittest.TestCase):
+    def test_version_flag_uses_package_version(self):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            with self.assertRaises(SystemExit) as raised:
+                main(["--version"])
+        self.assertEqual(raised.exception.code, 0)
+        self.assertEqual(output.getvalue().strip(), f"mcp-doctor {__version__}")
+
     def run_cli(self, *args: str, stdin: str = "") -> tuple[int, str]:
         output = io.StringIO()
         with contextlib.redirect_stdout(output), mock.patch("sys.stdin", io.StringIO(stdin)):
