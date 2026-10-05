@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-VERSION = "0.3.0"
+from . import __version__ as VERSION
 GROUPS = ("tools", "resources", "prompts")
 
 
